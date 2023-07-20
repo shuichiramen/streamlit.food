@@ -1,6 +1,5 @@
 import streamlit as st 
 import pandas as pd 
-import numpy as np
 import re
 
 import os
@@ -12,7 +11,8 @@ import settings
 openai.api_key = settings.AP
 
 
-st.title("栄養データ検索サイト")
+st.title("気になる！お菓子の栄養データ検索サイト")
+st.subheader("まずは検索")
 
 
 # セレクトボックスで性別と年齢範囲を選択
@@ -24,10 +24,13 @@ age_group = st.selectbox("年代を選んでください", ['18-29','30-49','50-
 df = pd.read_csv("菓子類1 csv.csv",float_precision='round_trip')
 
 # ユーザーが入力したキーワードを受け取る
-keyword = st.text_input("検索キーワードを入力してください*¹", "")
+keyword = st.text_input("お菓子の名前を入力してください*¹", "")
 filtered_df = df[df["食品名"].str.contains(keyword)]
+# フィルタリングされたデータを表示する
+filtered_df = df[df["食品名"].str.contains(keyword)]#[["食品名", selected_nutrient]]
+st.table(filtered_df)
 
-cols = ["エネルギー kcal","たんぱく質 g", "脂質 g", "炭水化物(単糖当量) g", "炭水化物(質量計) g","食物繊維総量 g","食塩相当量 g"]
+
 # 正規表現で数字のみを抽出する関数
 def extract_numbers(x):
     numbers = re.findall(r'\d+\.\d+|\d+', str(x))
@@ -36,12 +39,12 @@ def extract_numbers(x):
     else:
         return None
 
+cols = ["エネルギー kcal","たんぱく質 g", "脂質 g", "炭水化物(単糖当量) g", "炭水化物(質量計) g","食物繊維総量 g","食塩相当量 g"]
 # 数字のみを抽出してfloat型に変換する
 df[cols]= df[cols].applymap(extract_numbers)
 
 df=df.fillna(0)
 df[cols]=df[cols].abs()
-
 
 df.to_csv("output.csv", index=False)
 df = pd.read_csv( "output.csv",float_precision='round_trip')
@@ -53,10 +56,6 @@ nutrients = ["エネルギー kcal","たんぱく質 g", "脂質 g", "炭水化�
 
 # # ユーザーが選択した栄養素を受け取る
 # selected_nutrient = st.selectbox("栄養素を選択してください *²", nutrients)
-
-# フィルタリングされたデータを表示する
-filtered_df = df[df["食品名"].str.contains(keyword)]#[["食品名", selected_nutrient]]
-st.table(filtered_df)
 
 # def show_selected_row(row_index):
 #     st.write("Selected Row:")
@@ -124,9 +123,9 @@ else:
 thover_list_length = len(thover_list)
 
 
-st.write(f"閾値を超えた栄養素は{(thover_list)}です")
+st.write(f"過剰な栄養素は{(thover_list)}です")
 
-
+st.subheader("この後の望ましい食事は？")
 openai.api_key = st.text_input("OpenAI APIキーを入力してください")
 if st.button("この後何を食べたらよい？"):
     x=thover_list
@@ -151,37 +150,9 @@ if st.button("この後何を食べたらよい？"):
             max_tokens=1024,
             n=1,
             stop=None,
-            temperature=1.0#0に近いほうが再現性はたかい
+            temperature=0.5#0に近いほうが再現性はたかい
         )
         answer = completions.choices[0].text.strip()
         st.write(answer)
     
 
-    # # #試作用サンプルデータ
-    # protein=1
-    # th=0.5
-    # if  protein>th:
-    #     x="タンパク質"
-    #     input=f"{x}が少ない食事を提案してください"
-    #     print("a")
-    #     completions = openai.Completion.create(
-    #         engine="text-davinci-003",
-    #         prompt=input,
-    #         max_tokens=1024,
-    #         n=1,
-    #         stop=None,
-    #         temperature=1.0,#値が低いとランダム性が高くなる、確率の低いものも出る
-    #     )
-    #     ##openaiのapiを呼び出している
-    #     # response = openai.ChatCompletion.create(
-    #     #     model="text-davinci-003",
-    #     #     messages=[
-    #     #     {"role": "user", "content": "大谷翔平について教えて"},
-    #     #     ],
-    #     # )
-    #     print("b")
-    # output=completions.choices[0].text#response.choices[0]["message"]["content"].strip()
-    # #     output=input
-    
-
-    # st.write(output)
